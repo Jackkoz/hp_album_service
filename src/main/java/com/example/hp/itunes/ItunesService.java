@@ -1,17 +1,19 @@
 package com.example.hp.itunes;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ItunesService {
 
-    private static final String SEARCH_URI = "/search";
+    private static final String SEARCH_URI = "https://itunes.apple.com/search";
 
-    private final WebClient itunesWebClient;
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
     /**
@@ -20,8 +22,8 @@ public class ItunesService {
      */
     private final ConcurrentHashMap<String, ItunesResponse> cache = new ConcurrentHashMap<>();
 
-    public ItunesService(WebClient itunesWebClient, ObjectMapper objectMapper) {
-        this.itunesWebClient = itunesWebClient;
+    public ItunesService(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -34,20 +36,15 @@ public class ItunesService {
     }
 
     private ItunesResponse makeRequestForAlbum(String encodedArtist) {
-        var response = itunesWebClient
-                .get()
-                .uri(builder ->
-                        builder
-                                .path(SEARCH_URI)
-                                .queryParam("term", encodedArtist)
-                                .queryParam("media", "music")
-                                .queryParam("entity", "album")
-                                .queryParam("version", "2")
-                                .build())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+        URI uri = UriComponentsBuilder.fromUriString(SEARCH_URI)
+                .queryParam("term", encodedArtist)
+                .queryParam("media", "music")
+                .queryParam("entity", "album")
+                .queryParam("version", "2")
+                .build()
+                .toUri();
 
+        var response = restTemplate.getForEntity(uri, String.class).getBody();
         return objectMapper.readValue(response, ItunesResponse.class);
     }
 

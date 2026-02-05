@@ -3,7 +3,7 @@ package com.example.hp.album;
 import com.example.hp.itunes.ItunesService;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @Service
@@ -17,7 +17,7 @@ public class AlbumService {
 
     public List<Album> findAlbums(String artist) {
         var response = itunesService.fetchAlbums(artist);
-        var result = new HashMap<String, Album>();
+        var result = new LinkedHashMap<String, Album>();
         response.results().stream()
                 .map(itunesResult -> new Album(itunesResult.collectionName(), itunesResult.artworkUrl100()))
                 .forEach(album -> result.computeIfAbsent(album.name(), name -> album));
